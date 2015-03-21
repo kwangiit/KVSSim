@@ -1,0 +1,40 @@
+simulation.endtime 10^15
+
+simulation.logtime 10^15
+
+simulation.experiments 1
+
+network.size 1024
+
+protocol.tr UniformRandomTransport
+{
+	mindelay 7912
+	maxdelay 7912
+}
+
+protocol.peer PeerProtocol
+{
+	transport tr
+	idLength 120
+}
+
+init.create NetInit
+{
+	protocol peer
+	netSpeed 6800000000
+	latency 5
+	msgSize 1024
+	packOverhead 5
+	unpackOverhead 5
+	numClient 700
+	numServer 324
+	procTime 1000
+}
+
+control.workloadgene TrafficGene
+{
+	protocol peer
+	numReqPerClient 10
+	startupFilePath /home/kwang/Documents/work_kwang/javaprogram/KVSSim/src/KVSSim/startup/
+	step simulation.endtime
+}

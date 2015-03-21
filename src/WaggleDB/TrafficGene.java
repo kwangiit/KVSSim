@@ -9,33 +9,37 @@ import peersim.config.Configuration;
 
 public class TrafficGene implements Control {
 	private static final String PAR_PROT = "protocol";
-	private static final String PAR_IDLENGTH = "idLength";
+	private static final String PAR_NUMREQPERCLIENT = "numReqPerClient";
+	private static final String PAR_STARTUPFILEPATH = "startupFilePath";
 
 	private final int pid;
-	private final int idLength;
+	private final int numReqPerClient;
+	private final String startupFilePath;
 
 	public TrafficGene(String prefix) {
 		pid = Configuration.getPid(prefix + "." + PAR_PROT);
-		idLength = Configuration.getInt(prefix + "." + PAR_IDLENGTH);
+		numReqPerClient = Configuration.getInt(prefix + "." + PAR_NUMREQPERCLIENT);
+		startupFilePath = Configuration.getString(prefix + "." + PAR_STARTUPFILEPATH);
 	}
 
 	public boolean execute() {
 		int size = Network.size();
-		String path = "./startup/startup_file_" + Integer.toString(size)
-				+ ".txt";
+		int numClient = ((PeerProtocol)(((Node) Network.get(0)).getProtocol(pid))).numClient;
+		Library.numAllOpera = (long)numClient * (long)numReqPerClient;
+		for (int i = 0; i < numClient; i++)
+			((PeerProtocol)(((Node) Network.get(i)).getProtocol(pid))).numOpera = numReqPerClient;
+	
+		String path = startupFilePath + "startup_file_" + Integer.toString(size) + ".txt";
 		BufferedReader br = null;
-		try {
-			br = new BufferedReader(new FileReader(path));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 		TreeSet<Comparator> ts = new TreeSet<Comparator>();
 		try {
-			for (int i = 0; i < size; i++) {
+			br = new BufferedReader(new FileReader(path));
+			for (int i = 0; i < numClient; i++) {
 				long wait = Long.parseLong(br.readLine());
 				Comparator comp = new Comparator(wait, i);
 				ts.add(comp);
 			}
+			br.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -44,7 +48,7 @@ public class TrafficGene implements Control {
 			Comparator comp = it.next();
 			Node node = (Node) Network.get(comp.id);
 			PeerProtocol pp = (PeerProtocol) node.getProtocol(pid);
-			pp.doRequest(node, idLength, pid, comp.wait);
+			pp.doRequest(node, pid, comp.wait);
 		}
 		return false;
 	}
